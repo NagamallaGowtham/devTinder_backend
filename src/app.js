@@ -6,7 +6,8 @@ const app = express();
 //     res.send("Hello Ramaaaaaa");
 // });
 
-app.get("/user", (req, res) => {
+app.get("/user/:userId", (req, res) => {
+    console.log(req.params);
     res.send({firstname: "Rama", lastname: "Sita"});
 });
 
