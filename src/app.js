@@ -7,6 +7,40 @@ const app = express();
 app.use(express.json());
 
 
+// Delete the user
+app.delete("/user", async (req, res) => {
+    const userId = req.body.userId;
+    try {
+        await User.findByIdAndDelete(userId);
+        res.send("Deleted the user");
+    } catch(e) {
+        res.status(404).send("Something went wrong");
+    }
+});
+
+// update the user
+app.patch("/user", async (req, res) => {
+    const userId = req.body.userId;
+    try {
+        await User.findByIdAndUpdate(userId, {"emailId": "shiva@parvati.com"});
+        res.send("User updated successfully");
+    } catch(e) {
+        res.status(404).send("Something went wrong");
+    }
+});
+
+// update the user with emailId 
+app.patch("/userWithEmailId", async (req, res) => {
+    const emailId = req.body;
+    console.log(emailId);
+    try {
+        await User.findOneAndUpdate(emailId, {"lastName": "rukmini", "emailId": "krishnaa@rukmini.com"});
+        res.send("User details updated");
+    } catch(e) {
+        res.status(404).send("Something went wrong");
+    }
+})
+
 // GET user by Email
 app.get("/user", async (req, res) => {
     const userEmail = req.body.emailId;
