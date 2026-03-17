@@ -22,10 +22,10 @@ app.delete("/user", async (req, res) => {
 app.patch("/user", async (req, res) => {
     const userId = req.body.userId;
     try {
-        await User.findByIdAndUpdate(userId, {"emailId": "shiva@parvati.com"});
+        await User.findByIdAndUpdate(userId, {"emailId": "shiva@parvati.com"}, {runValidators: true});
         res.send("User updated successfully");
     } catch(e) {
-        res.status(404).send("Something went wrong");
+        res.status(404).send("Something went wrong" + e.message);
     }
 });
 
@@ -34,7 +34,7 @@ app.patch("/userWithEmailId", async (req, res) => {
     const emailId = req.body;
     console.log(emailId);
     try {
-        await User.findOneAndUpdate(emailId, {"lastName": "rukmini", "emailId": "krishnaa@rukmini.com"});
+        await User.findOneAndUpdate(emailId, {"lastName": "rukmini", "emailId": "krishnaa@rukmini.com"}, {runValidators: true});
         res.send("User details updated");
     } catch(e) {
         res.status(404).send("Something went wrong");
@@ -78,7 +78,7 @@ app.post("/signup", async (req, res) => {
         await user.save();
         res.send("user saved successfully");
     } catch(e) {
-        res.status(400).send("Something went wrong");
+        res.status(400).send("Something went wrong" + e.message);
     }
 })
 
