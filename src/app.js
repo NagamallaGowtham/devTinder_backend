@@ -21,8 +21,18 @@ app.delete("/user", async (req, res) => {
 // update the user
 app.patch("/user", async (req, res) => {
     const userId = req.body.userId;
+    const data = req.body;
     try {
-        await User.findByIdAndUpdate(userId, {"emailId": "shiva@parvati.com"}, {runValidators: true});
+        const ALLOWED_CHECKS = ["userId", "age", "profession"];
+        let not_allowed_key = "";
+        const is_allowed = Object.keys(data).every(k => {
+            not_allowed_key = k;
+            return ALLOWED_CHECKS.includes(k)
+        });
+        if (!is_allowed) {
+            throw new Error(`Cant update ${not_allowed_key} field`);
+        }
+        await User.findByIdAndUpdate(userId, data, {runValidators: true});
         res.send("User updated successfully");
     } catch(e) {
         res.status(404).send("Something went wrong" + e.message);
