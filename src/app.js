@@ -1,6 +1,8 @@
 const express = require("express");
 const {connectDB} = require("./config/database");
+const bcrypt = require("bcrypt");
 const User = require("./models/user");
+const {handleCheck} = require("./utils/handleChecks");
 
 const app = express();
 
@@ -82,9 +84,22 @@ app.get("/feed", async (req, res) => {
 });
 
 app.post("/signup", async (req, res) => {
-    const user = new User(req.body);
-
     try {
+        // handle validations
+        handleCheck(req);
+    
+        // password encryptions
+        const {firstName, lastName, emailId, password} = req.body;
+
+        const passwordHash = await bcrypt.hash(password, 10);
+    
+        const user = new User({
+            firstName,
+            lastName,
+            emailId,
+            password: passwordHash
+        });
+
         await user.save();
         res.send("user saved successfully");
     } catch(e) {
