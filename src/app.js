@@ -1,12 +1,15 @@
 const express = require("express");
 const {connectDB} = require("./config/database");
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 const User = require("./models/user");
 const {handleCheck} = require("./utils/handleChecks");
 
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 
 // Delete the user
@@ -107,6 +110,28 @@ app.post("/signup", async (req, res) => {
     }
 });
 
+app.post("/profile", async (req, res) => {
+    try {
+        const {token} = req.cookies;
+        if (!token) {
+            throw new Error("Invalid token");
+        }
+
+        const decoded = await jwt.verify(token, "DevTinder@2026");
+        const {_id} = decoded;
+
+        const userDetails = await User.findById(_id);
+
+        if (!userDetails) {
+            throw new Error("User does not exist");
+        }
+        
+        res.send(userDetails);
+    } catch (e) {
+        res.status(400).send("Error: " + e.message);
+    }
+})
+
 app.post("/login", async (req, res) => {
     try {
         const {emailId, password} = req.body;
@@ -120,7 +145,12 @@ app.post("/login", async (req, res) => {
         if (!checkPassword) {
             throw new Error("Invalid credentials");
         } else {
-            res.send("Hello User");
+            // create JWT
+            const token = await jwt.sign({_id: user._id}, "DevTinder@2026");
+
+            res.cookie("token", token);
+
+            res.send("Login Successfull!!!");
         }
     } catch (e) {
         res.status(400).send("Error: " + e.message);
