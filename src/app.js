@@ -45,12 +45,12 @@ app.post("/login", async (req, res) => {
             throw new Error("Invalid credentials");
         }
 
-        const checkPassword = await bcrypt.compare(password, user.password);
+        const checkPassword = await user.validatePassword(password);
         if (!checkPassword) {
             throw new Error("Invalid credentials");
         } else {
             // create JWT
-            const token = await jwt.sign({_id: user._id}, "DevTinder@2026", {expiresIn: "7d"});
+            const token = await user.getJWT();
 
             res.cookie("token", token, {expires: new Date(Date.now() + 7 * 86400000)});
 
@@ -67,6 +67,16 @@ app.post("/profile", authUser, async (req, res) => {
         
         res.send(user);
     } catch (e) {
+        res.status(400).send("Error: " + e.message);
+    }
+});
+
+app.post("/sendRequest", authUser, async (req, res) => {
+    try {
+        const user = req.user;
+
+        res.send(user.firstName + " sent you connection request");
+    } catch(e) {
         res.status(400).send("Error: " + e.message);
     }
 });
