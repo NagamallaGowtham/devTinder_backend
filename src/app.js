@@ -5,86 +5,12 @@ const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 const User = require("./models/user");
 const {handleCheck} = require("./utils/handleChecks");
+const { authUser } = require("./middlewares/auth");
 
 const app = express();
 
 app.use(express.json());
 app.use(cookieParser());
-
-
-// Delete the user
-app.delete("/user", async (req, res) => {
-    const userId = req.body.userId;
-    try {
-        await User.findByIdAndDelete(userId);
-        res.send("Deleted the user");
-    } catch(e) {
-        res.status(404).send("Something went wrong");
-    }
-});
-
-// update the user
-app.patch("/user", async (req, res) => {
-    const userId = req.body.userId;
-    const data = req.body;
-    try {
-        const ALLOWED_CHECKS = ["userId", "age", "profession"];
-        let not_allowed_key = "";
-        const is_allowed = Object.keys(data).every(k => {
-            not_allowed_key = k;
-            return ALLOWED_CHECKS.includes(k)
-        });
-        if (!is_allowed) {
-            throw new Error(`Cant update ${not_allowed_key} field`);
-        }
-        await User.findByIdAndUpdate(userId, data, {runValidators: true});
-        res.send("User updated successfully");
-    } catch(e) {
-        res.status(404).send("Something went wrong" + e.message);
-    }
-});
-
-// update the user with emailId 
-app.patch("/userWithEmailId", async (req, res) => {
-    const emailId = req.body;
-    console.log(emailId);
-    try {
-        await User.findOneAndUpdate(emailId, {"lastName": "rukmini", "emailId": "krishnaa@rukmini.com"}, {runValidators: true});
-        res.send("User details updated");
-    } catch(e) {
-        res.status(404).send("Something went wrong");
-    }
-})
-
-// GET user by Email
-app.get("/user", async (req, res) => {
-    const userEmail = req.body.emailId;
-
-    try {
-        const users = await User.find({emailId: userEmail});
-        if (!users.length) {
-            res.status(404).send("user not found!");
-        } else {
-            res.send(users);
-        }
-    } catch(e) {
-        res.status(404).send("Something went wrong!");
-    }
-});
-
-// get all users data
-app.get("/feed", async (req, res) => {
-    try {
-        const allUsers = await User.find({});
-        if (!allUsers.length) {
-            res.status(404).send("users not found!");
-        } else {
-            res.send(allUsers);
-        }
-    } catch(e) {
-        res.status(404).send("Something went wrong!");
-    }
-});
 
 app.post("/signup", async (req, res) => {
     try {
@@ -110,28 +36,6 @@ app.post("/signup", async (req, res) => {
     }
 });
 
-app.post("/profile", async (req, res) => {
-    try {
-        const {token} = req.cookies;
-        if (!token) {
-            throw new Error("Invalid token");
-        }
-
-        const decoded = await jwt.verify(token, "DevTinder@2026");
-        const {_id} = decoded;
-
-        const userDetails = await User.findById(_id);
-
-        if (!userDetails) {
-            throw new Error("User does not exist");
-        }
-        
-        res.send(userDetails);
-    } catch (e) {
-        res.status(400).send("Error: " + e.message);
-    }
-})
-
 app.post("/login", async (req, res) => {
     try {
         const {emailId, password} = req.body;
@@ -146,12 +50,22 @@ app.post("/login", async (req, res) => {
             throw new Error("Invalid credentials");
         } else {
             // create JWT
-            const token = await jwt.sign({_id: user._id}, "DevTinder@2026");
+            const token = await jwt.sign({_id: user._id}, "DevTinder@2026", {expiresIn: "7d"});
 
-            res.cookie("token", token);
+            res.cookie("token", token, {expires: new Date(Date.now() + 7 * 86400000)});
 
             res.send("Login Successfull!!!");
         }
+    } catch (e) {
+        res.status(400).send("Error: " + e.message);
+    }
+});
+
+app.post("/profile", authUser, async (req, res) => {
+    try {
+        const user = req.user;
+        
+        res.send(user);
     } catch (e) {
         res.status(400).send("Error: " + e.message);
     }
