@@ -20,7 +20,7 @@ const authUser = async (req, res, next) => {
         req.user = user;
         next();
     } catch(e) {
-        res.status(400).send("Error: " + e.message);
+        res.status(400).json({status: false, message: e.message, data: {}});
     }
 };
 
