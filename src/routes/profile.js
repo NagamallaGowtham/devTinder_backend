@@ -1,6 +1,9 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
 const { authUser } = require("../middlewares/auth");
 const isFieldsCanEdit = require("../utils/canEditUser");
+const User = require("../models/user");
+const isPasswordStrong = require("../utils/strongPassword");
 
 const profileRouter = express.Router();
 
@@ -32,9 +35,32 @@ profileRouter.patch("/profile/edit", authUser, async (req, res) => {
     }
 });
 
+// Change password
 profileRouter.patch("/profile/password", authUser, async (req, res) => {
     try {
-        
+        const {oldPassword, newPassword, confirmNewPassword} = req.body;
+
+        const user = req.user;
+
+        const validateOldPassword = await user.validatePassword(oldPassword);
+
+        if (!validateOldPassword) {
+            throw new Error("Incorrect Password");
+        }
+
+        if (newPassword === confirmNewPassword) {
+            if (!isPasswordStrong(newPassword)) {
+                throw new Error("Password is not strong enough");
+            }
+
+            const newUpdatedPassword = await bcrypt.hash(newPassword, 10);
+
+            user.password = newUpdatedPassword;
+            user.save();
+            res.send("Your new Password is updated successfully!");
+        } else {
+            throw new Error("Confirmed password is not matching with new password");
+        }
     } catch(e) {
         res.status(400).send("Error: " + e.message);
     }

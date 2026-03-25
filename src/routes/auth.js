@@ -3,6 +3,7 @@ const authRouter = express.Router();
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const { handleCheck } = require("../utils/handleChecks");
+const isPasswordStrong = require("../utils/strongPassword");
 
 
 authRouter.post("/signup", async (req, res) => {
@@ -12,6 +13,10 @@ authRouter.post("/signup", async (req, res) => {
 
         // password encryption
         const {firstName, lastName, emailId, password} = req.body;
+
+        if (!isPasswordStrong(password)) {
+            throw new Error("Password is not strong enough");
+        }
 
         const passwordHash = await bcrypt.hash(password, 10);
 
