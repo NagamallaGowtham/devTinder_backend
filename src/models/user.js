@@ -41,6 +41,15 @@ const userSchema = new mongoose.Schema({
     profession: {
         type: String,
         default: "Dev"
+    },
+    resetOtp: {
+        type: String,
+    },
+    resetOtpExpiry: {
+        type: Object
+    },
+    isOtpVerified: {
+        type: Boolean
     }
 }, {
     timestamps: true

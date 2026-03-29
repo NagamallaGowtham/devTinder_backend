@@ -36,7 +36,7 @@ profileRouter.patch("/profile/edit", authUser, async (req, res) => {
 });
 
 // Change password
-profileRouter.patch("/profile/password", authUser, async (req, res) => {
+profileRouter.patch("/profile/password/change", authUser, async (req, res) => {
     try {
         const {oldPassword, newPassword, confirmNewPassword} = req.body;
 
@@ -48,10 +48,10 @@ profileRouter.patch("/profile/password", authUser, async (req, res) => {
             throw new Error("Incorrect Password");
         }
 
+        if (!isPasswordStrong(newPassword)) {
+            throw new Error("Password is not strong enough");
+        }
         if (newPassword === confirmNewPassword) {
-            if (!isPasswordStrong(newPassword)) {
-                throw new Error("Password is not strong enough");
-            }
 
             const newUpdatedPassword = await bcrypt.hash(newPassword, 10);
 
@@ -63,6 +63,76 @@ profileRouter.patch("/profile/password", authUser, async (req, res) => {
         }
     } catch(e) {
         res.status(400).send("Error: " + e.message);
+    }
+});
+
+// forgot password
+profileRouter.post("/profile/password/forgot", async (req, res) => {
+    try {
+        const {emailId} = req.body;
+
+        const user = await User.findOne({emailId: emailId});
+        if (!user) {
+            throw new Error("Entered email id is not registered");
+        }
+
+        // Generate 6 digit OTP 
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+
+        user.resetOtp = otp;
+        user.resetOtpExpiry = otpExpiry;
+
+        console.log(otp);
+
+        await user.save();
+        res.send("Otp sent to your emailId");
+    } catch (err) {
+        res.status(400).send("Error: " + err.message);
+    }
+});
+
+// verify otp
+profileRouter.post("/profile/password/verifyOtp", async (req, res) => {
+    try {
+        const {emailId, otp} = req.body;
+
+        const user = await User.findOne({emailId: emailId});
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        if (user.resetOtp !== otp) throw new Error("Incorrect Otp");
+        if (user.resetOtpExpiry < new Date()) throw new Error("Otp is expired");
+
+        user.isOtpVerified = true;
+        await user.save();
+        res.send("Otp is verified");
+    } catch (err) {
+        res.status(400).send("Error: " + err.message);
+    }
+});
+
+// reset password 
+profileRouter.post("/profile/password/reset", async (req, res) => {
+    try {
+        const {emailId, newPassword} = req.body;
+
+        const user = await User.findOne({emailId: emailId});
+        if (!user) {
+            throw new Error("User not found");
+        }
+
+        if (!user.isOtpVerified) throw new Error("OTP is not verified");
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.resetOtp = null;
+        user.resetOtpExpiry = null;
+        user.isOtpVerified = false;
+
+        await user.save();
+        res.send("Password reset successful!!");
+    } catch (err) {
+        res.status(400).send("Error: " + err.message);
     }
 });
 
