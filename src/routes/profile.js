@@ -7,7 +7,7 @@ const isPasswordStrong = require("../utils/strongPassword");
 
 const profileRouter = express.Router();
 
-profileRouter.post("/profile/view", authUser, async (req, res) => {
+profileRouter.get("/profile/view", authUser, async (req, res) => {
     try {
         const user = req.user;
         
