@@ -74,7 +74,7 @@ userRouter.get("/user/feed", authUser, async (req, res) => {
                 {_id: {$nin: Array.from(filterConnectionUsers)}},
                 {_id: {$ne: loggedInUser._id}}
             ]
-        }).select("firstName lastName").skip(skip).limit(limit);
+        }).select("firstName lastName profession").skip(skip).limit(limit);
 
         res.json({status: true, data: filterFreshUsers});
     } catch (err) {
