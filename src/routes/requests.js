@@ -5,6 +5,8 @@ const User = require("../models/user");
 
 const requestRouter = express.Router();
 
+const sendEmail = require("../utils/sendEmail");
+
 requestRouter.post("/request/send/:status/:userId", authUser, async (req, res) => {
     try {
         const fromUserId = req.user._id;
@@ -39,6 +41,11 @@ requestRouter.post("/request/send/:status/:userId", authUser, async (req, res) =
         });
 
         await request.save();
+
+        const emailRes = await sendEmail.run();
+
+        console.log(emailRes);
+
         res.json({status: true, data: request});
     } catch (err) {
         res.status(400).json({status: false, message: err.message});
